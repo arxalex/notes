@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notes by Arxalex</title>
+    <link href="style.css" rel="stylesheet" type="text/css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.1/font/bootstrap-icons.css">
+    <link rel="icon" href="https://apps.arxalex.com/favicon.png" type="image/x-icon">
+</head>
+
+<body>
+    <div id='page-wrapper' class="container-fluid">
+        <alert v-on:yes="confirmYes" v-on:no="confirmNo" v-if="show" :text="text"></alert>
+        <div class="row">
+            <div class="col-md-5 col-lg-4 bg-grey h-100vh" :class="{'d-none d-sm-none d-md-block': displayNote}">
+                <div class="mb-1 mx-0 py-2 px-3 row" id='side-bar'>
+                    <div class="px-2 text-dark mt-1 col-6">
+                        <h6 class="d-inline">Notes</h6><span class="d-inline small "> by </span><a href="../"><img class="d-inline" height="25px" src="../arxlogo.svg"></a>
+                    </div>
+                    <div class="col-6 px-1 d-flex justify-content-end align-items-center">
+                        <button :disabled="!undoActive" v-on:click="undo" class="btn text-secondary p-1"><i
+                                class="bi bi-arrow-90deg-left"></i></button>
+                        <button :disabled="!redoActive" v-on:click="redo" class="btn text-secondary p-1"><i
+                                class="bi bi-arrow-90deg-right"></i></button>
+                        <button v-on:click="addNewNote" class="btn text-primary p-1"><i
+                                class="bi bi-clipboard-plus"></i> </button>
+                    </div>
+                    <div class="m-0 mt-2 p-0 rounded bg-white notes-list">
+                        <note-teaser v-for='(note, index) in notes' :note='note' v-on:remove-note="removeNote(index)"
+                            v-on:select-note="selectNote(index)"></note-teaser>
+                    </div>
+                    <div class="mt-2 px-1">
+                        <button class="btn p-1 me-2" v-on:click="jsonExport(notes)"><i class="bi bi-download"></i>
+                            Download</button>
+                        <div class="upload d-inline">
+                            <label class="btn p-1 position-absolute"><i class="bi bi-cloud-upload"></i> Upload</label>
+                            <input class="position-absolute" type="file" id="import">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-7 col-lg-8" :class="{ 'd-none d-sm-none d-md-block' : !displayNote}" id='content'>
+                <note v-if="displayNote" v-on:edit-note="editNote" v-on:back="back"
+                    v-on:remove-note="removeNote(onmain)" :note='notes[onmain]' :edit="edit"></note>
+            </div>
+        </div>
+    </div>
+    <script type="text/x-template" id='note-teaser-template'>
+        <div v-on:click='$emit("select-note")' class="my-0 pb-2 pt-2 px-5 border-bottom text-dark rounded" :class="{'bg-warning text-white': isActive}" v-on:mouseover="nthSet(true)" v-on:mouseleave="nthSet(false)">
+            <strong class="cursor-pointer">{{note.label}}</strong>
+            <button v-if="nthValue" v-on:click='$emit("remove-note")' class="btn text-danger p-0 teaser-delete-button"><i class="bi bi-clipboard-minus"></i></button>
+        </div>
+    </script>
+    <script type="text/x-template" id='note-template'>
+        <div class='row py-2 ps-4'>
+            <button class="btn col-1 text-warning d-block d-md-none" v-on:click="$emit('back')"><i class="bi bi-chevron-left"></i></button>
+            <div class="col-8">
+                <h2 v-if="!edit" class="mt-1">{{note.label}}</h2>
+                <input v-if="edit" class="mt-2" type="text" v-model="note.label">
+            </div>
+            <div class="col-3 d-flex justify-content-end align-items-center">
+                <button v-on:click="addNewTodo" class="btn text-secondary p-0"><i class="bi bi-plus-circle"></i></button>
+                <button v-if="!edit" v-on:click="$emit('edit-note')" class="btn text-warning p-0 m-2"><i class="bi bi-pencil-square"></i></button>
+                <button v-if="edit" v-on:click="$emit('edit-note')" class="btn text-primary p-0 m-2"><i class="bi bi-check2-circle"></i></button>
+                <button v-on:click='$emit("remove-note")' class="btn text-danger p-0"><i class="bi bi-clipboard-minus"></i></button>           
+            </div>
+            <div>
+                <todo-item v-for='(todo, index) in note.todos' :todoElement='todo' :edit="edit" v-on:remove-todo="removeTodo(index)" ></todo-item>
+            </div>
+        </div>
+    </script>
+    <script type="text/x-template" id='todo-item-template'>
+        <div>
+            <div v-on:mouseover="tthSet(true)" v-on:mouseleave="tthSet(false)">   
+                <input v-on:click='checkTodo' type='checkbox' :checked="todoElement.checked">
+                <span v-if="!edit">{{ todoElement.label }}</span>
+                <input v-if="edit" class='d-inline' type="text" v-model="todoElement.label">
+                <button v-if="tthValue || edit" v-on:click='$emit("remove-todo")' class="btn text-danger p-0 teaser-delete-button"><i class="bi bi-clipboard-minus"></i></button>
+            </div>
+        </div>
+    </script>
+    <script type="text/x-template" id='alert-template'>
+        <div class="confirm">
+            <div class="message row rounded">
+                <span class="col-12 text-center my-1">{{ text }}</span>
+                <button class='btn text-primary col-6 border' v-on:click="$emit('yes')">Yes</button>
+                <button class='btn text-secondary col-6 border' v-on:click="$emit('no')">No</button>
+            </div>
+        </div>
+    </script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"
+        integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <script src="main.js"></script>
+</body>
+
+</html>
