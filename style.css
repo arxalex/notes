@@ -1,0 +1,37 @@
+.cursor-pointer{
+    cursor: pointer;
+}
+.teaser-delete-button{
+    font-size: 0.9em !important;
+    vertical-align: bottom !important;
+}
+.bg-grey{
+    background-color: #f2f2f4!important;
+}
+.h-100vh{
+    height: 100vh;
+}
+.confirm{
+    position: fixed;
+    background: #0004;
+    z-index: 999;
+    top: 0;
+    right: 0;
+    left: 0;
+    bottom: 0;
+}
+.confirm .message{
+    position: absolute;
+    left: calc(50% - 100px);
+    right: calc(50% - 100px);
+    top: calc(50% - 50px);
+    background: white;
+}
+.notes-list{
+    max-height: calc(100vh - 150px);
+    overflow: auto;
+}
+.upload input{
+    width: 82px;
+    opacity: 0;
+}
